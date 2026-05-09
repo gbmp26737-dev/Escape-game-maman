@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escape Game · Opération Passeport Perdu</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;600;700&display=swap');
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  body{
+    font-family:'Nunito',sans-serif;
+    background:#1a1035;
+    min-height:100vh;
+    color:#fff;
+    overflow-x:hidden;
+  }
+
+  .stars-bg{
+    position:fixed;inset:0;
+    background:radial-gradient(ellipse at 20% 20%,#2d1b69 0%,#1a1035 50%,#0d0820 100%);
+    z-index:0;
+  }
+  .stars-bg::before{
+    content:'';position:absolute;inset:0;
+    background-image:
+      radial-gradient(circle,#fff 1px,transparent 1px),
+      radial-gradient(circle,rgba(255,255,255,0.6) 1px,transparent 1px),
+      radial-gradient(circle,rgba(255,255,255,0.3) 1px,transparent 1px);
+    background-size:120px 120px,80px 80px,200px 200px;
+    background-position:0 0,40px 40px,100px 60px;
+    animation:twinkle 6s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle{0%{opacity:.7}100%{opacity:1}}
+
+  .wrap{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+
+  .screen{display:none;width:100%;max-width:540px;animation:fadeIn .4s ease}
+  .screen.active{display:block}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+  .card{
+    background:rgba(255,255,255,0.07);
+    backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:20px;
+    padding:1.75rem;
+  }
+
+  .country-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+    padding:4px 12px;border-radius:20px;margin-bottom:1rem;
+  }
+  .badge-fr{background:rgba(0,85,164,0.4);border:1px solid rgba(0,85,164,0.6);color:#89b8f5}
+  .badge-jp{background:rgba(188,0,45,0.3);border:1px solid rgba(188,0,45,0.5);color:#f5a0a0}
+  .badge-eg{background:rgba(180,140,0,0.3);border:1px solid rgba(180,140,0,0.5);color:#f5d87a}
+  .badge-br{background:rgba(0,156,59,0.3);border:1px solid rgba(0,156,59,0.5);color:#7af5a8}
+  .badge-us{background:rgba(200,30,30,0.3);border:1px solid rgba(200,30,30,0.5);color:#f5a0a0}
+  .badge-au{background:rgba(0,120,180,0.3);border:1px solid rgba(0,120,180,0.5);color:#89c8f5}
+  .badge-it{background:rgba(0,140,69,0.3);border:1px solid rgba(0,140,69,0.5);color:#7af5a8}
+
+  h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:#fff;margin-bottom:.5rem;line-height:1.3}
+  h2{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:#fff;margin-bottom:.75rem}
+
+  p{font-size:14px;color:rgba(255,255,255,0.75);line-height:1.7;margin-bottom:.75rem}
+
+  .story{
+    background:rgba(255,255,255,0.06);
+    border-left:3px solid #a78bfa;
+    border-radius:0 10px 10px 0;
+    padding:.9rem 1rem;
+    font-size:14px;color:rgba(255,255,255,0.85);
+    line-height:1.7;margin-bottom:1rem;
+    font-style:italic;
+  }
+  .story em{color:#e9d5ff;font-style:normal;font-weight:700}
+
+  .clue{
+    background:rgba(251,191,36,0.12);
+    border:1px solid rgba(251,191,36,0.3);
+    border-radius:10px;
+    padding:.7rem 1rem;
+    font-size:13px;color:#fde68a;
+    margin-bottom:1rem;
+  }
+
+  .cipher-grid{
+    display:grid;grid-template-columns:repeat(6,1fr);gap:4px;
+    margin-bottom:1rem;
+  }
+  .cipher-cell{
+    background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+    border-radius:6px;padding:5px 2px;text-align:center;
+  }
+  .cipher-cell .l{font-size:14px;font-weight:700;color:#e9d5ff}
+  .cipher-cell .n{font-size:11px;color:rgba(255,255,255,0.5)}
+
+  input[type=text]{
+    width:100%;padding:11px 14px;font-size:16px;font-family:'Nunito',sans-serif;
+    border-radius:10px;border:1px solid rgba(255,255,255,0.2);
+    background:rgba(255,255,255,0.08);color:#fff;
+    margin-bottom:.6rem;outline:none;transition:border .2s;
+  }
+  input[type=text]::placeholder{color:rgba(255,255,255,0.35)}
+  input[type=text]:focus{border-color:#a78bfa;background:rgba(167,139,250,0.1)}
+
+  .btn-main{
+    width:100%;padding:12px;font-family:'Nunito',sans-serif;
+    font-size:15px;font-weight:700;border:none;border-radius:10px;cursor:pointer;
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    color:#fff;transition:opacity .2s,transform .1s;
+  }
+  .btn-main:hover{opacity:.9}
+  .btn-main:active{transform:scale(.98)}
+
+  .btn-hint{
+    width:100%;padding:8px;font-family:'Nunito',sans-serif;
+    font-size:13px;font-weight:600;border:1px solid rgba(251,191,36,0.4);
+    border-radius:10px;cursor:pointer;margin-top:.5rem;
+    background:transparent;color:#fde68a;transition:background .2s;
+  }
+  .btn-hint:hover{background:rgba(251,191,36,0.1)}
+
+  .feedback{
+    border-radius:8px;padding:8px 12px;
+    font-size:13px;font-weight:600;margin-bottom:.6rem;display:none;
+  }
+  .feedback.ok{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);color:#86efac}
+  .feedback.ko{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5}
+
+  .hint-box{
+    background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);
+    border-radius:8px;padding:.75rem;font-size:13px;color:#fde68a;
+    margin-top:.5rem;display:none;line-height:1.6;
+  }
+
+  .progress{display:flex;gap:5px;justify-content:center;margin-bottom:1.25rem}
+  .pip{width:32px;height:5px;border-radius:3px;background:rgba(255,255,255,0.15);transition:background .3s}
+  .pip.done{background:#7c3aed}
+  .pip.cur{background:#a855f7;box-shadow:0 0 8px #a855f7}
+
+  .globe{font-size:52px;display:block;text-align:center;margin-bottom:1rem;animation:float 3s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+  .fragment-row{
+    display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:1rem 0;
+  }
+  .frag{
+    width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-size:18px;font-weight:700;font-family:'Playfair Display',serif;
+    border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.06);
+    color:rgba(255,255,255,0.25);transition:all .4s;
+  }
+  .frag.found{background:rgba(124,58,237,0.4);border-color:#a855f7;color:#e9d5ff;transform:scale(1.05)}
+
+  .final-card{
+    background:rgba(255,255,255,0.07);
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:20px;padding:2rem;text-align:center;
+  }
+  .heart-anim{font-size:48px;animation:heartbeat 1s ease-in-out infinite}
+  @keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+  .code-display{
+    background:rgba(124,58,237,0.2);border:2px solid rgba(167,139,250,0.4);
+    border-radius:12px;padding:1rem;margin:1rem 0;
+    font-family:'Playfair Display',serif;font-size:32px;
+    letter-spacing:10px;color:#e9d5ff;text-align:center;
+  }
+
+  .message-maman{
+    background:linear-gradient(135deg,rgba(236,72,153,0.2),rgba(124,58,237,0.2));
+    border:1px solid rgba(236,72,153,0.4);
+    border-radius:14px;padding:1.25rem;margin:1rem 0;
+  }
+  .message-maman p{color:#fbcfe8;font-size:16px;font-weight:600;line-height:1.7;margin:0}
+
+  .score-box{margin-top:1rem}
+  .score-val{font-size:28px;font-weight:700;color:#e9d5ff;font-family:'Playfair Display',serif}
+  .stars-row{font-size:26px;letter-spacing:4px;margin:.25rem 0}
+
+  .btn-restart{
+    margin-top:1rem;width:100%;padding:12px;font-family:'Nunito',sans-serif;
+    font-size:15px;font-weight:700;border:2px solid rgba(167,139,250,0.5);
+    border-radius:10px;cursor:pointer;background:transparent;
+    color:#e9d5ff;transition:all .2s;
+  }
+  .btn-restart:hover{background:rgba(124,58,237,0.3)}
+
+  .intro-btn{
+    width:100%;padding:14px;font-family:'Nunito',sans-serif;
+    font-size:16px;font-weight:700;border:none;border-radius:12px;cursor:pointer;
+    background:linear-gradient(135deg,#ec4899,#a855f7);
+    color:#fff;margin-top:.5rem;transition:opacity .2s;
+  }
+  .intro-btn:hover{opacity:.9}
+
+  .confetti-bar{
+    display:flex;gap:4px;justify-content:center;font-size:20px;
+    margin-bottom:1rem;animation:slidein .5s ease;
+  }
+  @keyframes slidein{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="stars-bg"></div>
+<div class="wrap">
+
+  <!-- INTRO -->
+  <div id="s-intro" class="screen active">
+    <div class="card" style="text-align:center">
+      <span class="globe">🌍</span>
+      <h1>Opération<br>Passeport Perdu</h1>
+      <p style="margin:.75rem 0 1.25rem">Une agente secrète a dispersé 7 fragments de code dans 7 pays du monde. Trouvez-les tous pour ouvrir le coffre et découvrir le message secret !</p>
+      <div class="clue" style="text-align:left">
+        🗺️ 7 destinations · Niveau difficile · ~30 min<br>
+        Chaque bonne réponse révèle un fragment du code final.
+      </div>
+      <div class="fragment-row" id="intro-frags">
+        <div class="frag">?</div><div class="frag">?</div><div class="frag">?</div>
+        <div class="frag">?</div><div class="frag">?</div><div class="frag">?</div><div class="frag">?</div>
+      </div>
+      <button class="intro-btn" onclick="showScreen('s-1')">🚀 Commencer l'aventure</button>
+    </div>
+  </div>
+
+  <!-- ÉNIGME 1 -->
+  <div id="s-1" class="screen">
+    <div class="progress" id="prog-1"></div>
+    <div class="card">
+      <span class="country-badge badge-fr">🇫🇷 Paris · France</span>
+      <h2>La Tour mystérieuse</h2>
+      <div class="story">L'agente a gravé un message sur la Tour Eiffel : <em>"Je suis née en 1889. Quel est le chiffre des dizaines de mon année de naissance ?"</em></div>
+      <div class="clue">💡 Regardez le chiffre des <strong>dizaines</strong> dans 1889. Exemple : dans 1234, les dizaines c'est 3.</div>
+      <input type="text" id="ans-1" placeholder="Votre réponse..." onkeydown="if(event.key==='Enter')check(1)">
+      <div class="feedback" id="fb-1"></div>
+      <div class="hint-box" id="hint-1">1889 → les dizaines : 1-8-<strong>8</strong>-9. Le chiffre des dizaines est <strong>8</strong>.</div>
+      <button class="btn-main" onclick="check(1)">Valider ✓</button>
+      <button class="btn-hint" onclick="toggleHint(1)">💡 Voir un indice (−10 pts)</button>
+    </div>
+  </div>
+
+  <!-- ÉNIGME 2 -->
+  <div id="s-2" class="screen">
+    <div class="progress" id="prog-2"></div>
+    <div class="card">
+      <span class="country-badge badge-jp">🇯🇵 Tokyo · Japon</span>
+      <h2>Le code du temple</h2>
+      <div class="story">Au temple Senso-ji, une inscription dit : <em>"Mon drapeau montre un disque rouge sur fond blanc. Combien de couleurs contient-il ?"</em></div>
+      <div class="clue">🎌 Visualisez le drapeau du Japon et comptez les couleurs distinctes.</div>
+      <input type="text" id="ans-2" placeholder="Votre réponse..." onkeydown="if(event.key==='Enter')check(2)">
+      <div class="feedback" id="fb-2"></div>
+      <div class="hint-box" id="hint-2">Le drapeau du Japon : fond <strong>blanc</strong> + cercle <strong>rouge</strong> = 2 couleurs.</div>
+      <button class="btn-main" onclick="check(2)">Valider ✓</button>
+      <button class="btn-hint" onclick="toggleHint(2)">💡 Voir un indice (−10 pts)</button>
+    </div>
+  </div>
+
+  <!-- ÉNIGME 3 -->
+  <div id="s-3" class="screen">
+    <div class="progress" id="prog-3"></div>
+    <div class="card">
+      <span class="country-badge badge-eg">🇪🇬 Le Caire · Égypte</span>
+      <h2>La pyramide chiffrée</h2>
+      <div class="story">Face à la Grande Pyramide, l'agente pose ce défi : <em>"La pyramide de Khéops a 4 faces triangulaires. Multiplie ce nombre par le nombre de côtés d'un carré. Donne-moi uniquement le chiffre des unités du résultat."</em></div>
+      <div class="clue">📐 4 × 4 = ? → chiffre des unités seulement.</div>
+      <input type="text" id="ans-3" placeholder="Votre réponse..." onkeydown="if(event.key==='Enter')check(3)">
+      <div class="feedback" id="fb-3"></div>
+      <div class="hint-box" id="hint-3">4 faces × 4 côtés = 16. Le chiffre des unités de 16 est <strong>6</strong>.</div>
+      <button class="btn-main" onclick="check(3)">Valider ✓</button>
+      <button class="btn-hint" onclick="toggleHint(3)">💡 Voir un indice (−10 pts)</button>
+    </div>
+  </div>
+
+  <!-- ÉNIGME 4 -->
+  <div id="s-4" class="screen">
+    <div class="progress" id="prog-4"></div>
+    <div class="card">
+      <span class="country-badge badge-br">🇧🇷 Rio · Brésil</span>
+      <h2>Le carnaval des lettres</h2>
+      <div class="story">Au carnaval de Rio, chaque lettre vaut son rang dans l'alphabet (A=1, B=2…). <em>"Quelle est la valeur de la première lettre de la capitale du Brésil ?"</em></div>
+      <div class="cipher-grid">
+        <div class="cipher-cell"><div class="l">A</div><div class="n">1</div></div>
+        <div class="cipher-cell"><div class="l">B</div><div class="n">2</div></div>
+        <div class="cipher-cell"><div class="l">C</div><div class="n">3</div></div>
+        <div class="cipher-cell"><div class="l">D</div><div class="n">4</div></div>
+        <div class="cipher-cell"><div class="l">E</div><div class="n">5</div></div>
+        <div class="cipher-cell"><div class="l">F</div><div class="n">6</div></div>
+      </div>
+      <div class="clue">🏙️ La capitale du Brésil est une ville commençant par B…</div>
+      <input type="text" id="ans-4" placeholder="Votre réponse..." onkeydown="if(event.key==='Enter')check(4)">
+      <div class="feedback" id="fb-4"></div>
+      <div class="hint-box" id="hint-4">La capitale est <strong>Brasília</strong>. Elle commence par <strong>B</strong>. B = 2e lettre = <strong>2</strong>.</div>
+      <button class="btn-main" onclick="check(4)">Valider ✓</button>
+      <button class="btn-hint" onclick="toggleHint(4)">💡 Voir un indice (−10 pts)</button>
+    </div>
+  </div>
+
+  <!-- ÉNIGME 5 -->
+  <div id="s-5" class="screen">
+    <div class="progress" id="prog-5"></div>
+    <div class="card">
+      <span class="country-badge badge-us">🇺🇸 New York · États-Unis</span>
+      <h2>La Statue déchiffrée</h2>
+      <div class="story">L'agente observe la Statue de la Liberté et demande : <em>"Combien de lettres y a-t-il dans le mot anglais LIBERTY ?"</em></div>
+      <div class="clue">🗽 Comptez les lettres une à une : L-I-B-E-R-T-Y</div>
+      <input type="text" id="ans-5" placeholder="Votre réponse..." onkeydown="if(event.key==='Enter')check(5)">
+      <div class="feedback" id="fb-5"></div>
+      <div class="hint-box" id="hint-5">L(1) I(2) B(3) E(4) R(5) T(6) Y(7) → <strong>7 lettres</strong>.</div>
+      <button class="btn-main" onclick="check(5)">Valider ✓</button>
+      <button class="btn-hint" onclick="toggleHint(5)">💡 Voir un indice (−10 pts)</button>
+    </div>
+  </div>
+
+  <!-- ÉNIGME 6 -->
+  <div id="s-6" class="screen">
+    <div class="progress" id="prog-6"></div>
+    <div class="card">
+      <span class="country-badge badge-au">🇦🇺 Sydney · Australie</span>
+      <h2>L'Opéra du bout du monde</h2>
+      <div class="story">Devant l'Opéra de Sydney : <em>"Une octave contient 7 notes. Un opéra classique a 3 actes. Additionne ces deux nombres, puis donne-moi le chiffre des unités."</em></div>
+      <div class="clue">🎵 7 + 3 = ? → chiffre des unités seulement.</div>
+      <input type="text" id="ans-6" placeholder="Votre réponse..." onkeydown="if(event.key==='Enter')check(6)">
+      <div class="feedback" id="fb-6"></div>
+      <div class="hint-box" id="hint-6">7 + 3 = 10. Le chiffre des unités de 10 est <strong>0</strong>.</div>
+      <button class="btn-main" onclick="check(6)">Valider ✓</button>
+      <button class="btn-hint" onclick="toggleHint(6)">💡 Voir un indice (−10 pts)</button>
+    </div>
+  </div>
+
+  <!-- ÉNIGME 7 -->
+  <div id="s-7" class="screen">
+    <div class="progress" id="prog-7"></div>
+    <div class="card">
+      <span class="country-badge badge-it">🇮🇹 Venise · Italie</span>
+      <h2>Le pont des Soupirs</h2>
+      <div class="story">Au Pont des Soupirs, le dernier défi : <em>"Le carnaval de Venise dure 2 semaines. Combien de jours cela fait-il ? Donne uniquement le chiffre des unités."</em></div>
+      <div class="clue">🎭 1 semaine = 7 jours. 2 semaines = ? → chiffre des unités.</div>
+      <input type="text" id="ans-7" placeholder="Votre réponse..." onkeydown="if(event.key==='Enter')check(7)">
+      <div class="feedback" id="fb-7"></div>
+      <div class="hint-box" id="hint-7">2 × 7 = 14. Le chiffre des unités de 14 est <strong>4</strong>.</div>
+      <button class="btn-main" onclick="check(7)">Valider ✓</button>
+      <button class="btn-hint" onclick="toggleHint(7)">💡 Voir un indice (−10 pts)</button>
+    </div>
+  </div>
+
+  <!-- FINAL -->
+  <div id="s-final" class="screen">
+    <div class="final-card">
+      <div class="confetti-bar">🎊 🌸 🎉 💐 🎊</div>
+      <div class="heart-anim">💝</div>
+      <h1 style="font-size:24px;margin:.5rem 0">Mission accomplie !</h1>
+      <p>Vous avez retrouvé les 7 fragments du code secret !</p>
+
+      <div class="code-display" id="final-code">8·2·6·2·7·0·4</div>
+
+      <div class="message-maman">
+        <p>🌸 Félicitations, Maman d'amour ! 🌸<br><br>
+        Tu as résolu cette aventure comme la super-héroïne que tu es !<br>
+        Bonne fête des Mères 💐<br>
+        Je t'aime très fort ! ❤️</p>
+      </div>
+
+      <div class="score-box">
+        <p style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:2px">Ton score final</p>
+        <div class="score-val" id="final-score">700 pts</div>
+        <div class="stars-row" id="final-stars">⭐⭐⭐</div>
+      </div>
+
+      <div class="fragment-row" style="margin-top:1rem">
+        <div class="frag found">8</div><div class="frag found">2</div><div class="frag found">6</div>
+        <div class="frag found">2</div><div class="frag found">7</div><div class="frag found">0</div><div class="frag found">4</div>
+      </div>
+
+      <button class="btn-restart" onclick="restart()">🔄 Rejouer</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var answers={1:'8',2:'2',3:'6',4:'2',5:'7',6:'0',7:'4'};
+var score=700,hintUsed={},found=[];
+
+function buildProgress(q){
+  var el=document.getElementById('prog-'+q);
+  if(!el)return;
+  var h='';
+  for(var i=1;i<=7;i++){
+    var c=i<q?'done':i===q?'cur':'';
+    h+='<div class="pip '+c+'"></div>';
+  }
+  el.innerHTML=h;
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});
+  document.getElementById(id).classList.add('active');
+  var m=id.match(/s-(\d+)/);
+  if(m)buildProgress(parseInt(m[1]));
+  var inp=document.querySelector('#'+id+' input');
+  if(inp){inp.value='';setTimeout(function(){inp.focus()},100);}
+}
+
+function toggleHint(q){
+  var h=document.getElementById('hint-'+q);
+  if(!hintUsed[q]){hintUsed[q]=true;score=Math.max(0,score-10);}
+  h.style.display=h.style.display==='block'?'none':'block';
+}
+
+function check(q){
+  var inp=document.getElementById('ans-'+q);
+  var fb=document.getElementById('fb-'+q);
+  var val=inp.value.trim();
+  fb.style.display='block';
+  if(val===answers[q]){
+    fb.className='feedback ok';
+    fb.textContent='Excellent ! Fragment '+q+' trouvé : '+answers[q]+' — cap sur la prochaine destination !';
+    if(found.indexOf(q)===-1)found.push(q);
+    setTimeout(function(){
+      if(q<7)showScreen('s-'+(q+1));
+      else showFinal();
+    },1300);
+  } else {
+    fb.className='feedback ko';
+    score=Math.max(0,score-5);
+    fb.textContent='Ce n\'est pas ça… Réessayez ! (−5 pts)';
+    inp.select();
+  }
+}
+
+function showFinal(){
+  document.getElementById('final-score').textContent=score+' pts';
+  var s=score>=600?'⭐⭐⭐':score>=350?'⭐⭐☆':'⭐☆☆';
+  document.getElementById('final-stars').textContent=s;
+  showScreen('s-final');
+}
+
+function restart(){
+  score=700;hintUsed={};found=[];
+  document.querySelectorAll('input').forEach(function(i){i.value='';});
+  document.querySelectorAll('.feedback').forEach(function(f){f.style.display='none';});
+  document.querySelectorAll('.hint-box').forEach(function(h){h.style.display='none';});
+  showScreen('s-1');
+}
+
+buildProgress(1);
+</script>
+</body>
+</html>
